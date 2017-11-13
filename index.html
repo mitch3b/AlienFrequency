@@ -31,12 +31,17 @@
 
 	function init() {
 		loadMessage1();
+		hideButton("stopButton");
 
 		for(var i = 0, len = allowedChars.length; i < len; i++) {
 			//TODO Every other is technically off by .0005
 			charToFreq[allowedChars[i]] = (73.179 + (12.1965*i));
 		}
 
+		initFrequencyPlayer();
+	}
+
+	function initFrequencyPlayer(){
 		var context = new (window.AudioContext || window.webkitAudioContext)();
 		frequencyPlayer = new FrequencyPlayer(context);
 	}
@@ -56,7 +61,19 @@
 		whiteNoise.connect(audioContext.destination);
 	}
 
+	//Only way to stop the current one is to kill it entirely. Get another one ready while we're here
+	function stop() {
+		frequencyPlayer.close();
+		initFrequencyPlayer();
+
+		hideButton("stopButton");
+		showButton("playButton");
+	}
+
 	function playAlienMessage() {
+		hideButton("playButton");
+		showButton("stopButton");
+
 		var alienCode = document.getElementById("alienMessageTextArea").value;
 
 		var totalDuration = 0;
@@ -72,6 +89,17 @@
 		if(!document.getElementById("whiteNoiseOff").checked) {
 			frequencyPlayer.addWhiteNoise(totalDuration);
 		}
+	}
+
+	//This button hiding/showing is a little clunky but gets the job done
+	function showButton(buttonId) {
+		var x = document.getElementById(buttonId);
+    x.style.display = "block";
+	}
+
+	function hideButton(buttonId) {
+		var x = document.getElementById(buttonId);
+		x.style.display = "none";
 	}
 
 	// Returns a random number (number - varianceDistance) to (number + varianceDistance)
@@ -112,6 +140,10 @@
 		addWhiteNoise(duration) {
 			whiteNoise(this.context, duration);
 		}
+
+		close() {
+			this.context.close();
+		}
 	}
 
 	function onlyAlienLetters(valueToCheck) {
@@ -135,7 +167,8 @@
 	  <option value="triangle">triangle</option>
 	</select>
 	<input type="checkbox" id="whiteNoiseOff" value="Clean"> Enhance by cleaning :) <br>
-	<button onclick="playAlienMessage()">Play</button>
+	<button onclick="playAlienMessage()" id="playButton">Play</button>
+	<button onclick="stop()" id="stopButton">Stop</button>
 	<button onclick="loadMessage1()">Load message 1</button>
 	<button onclick="loadMessage2()">Load message 2</button>
 

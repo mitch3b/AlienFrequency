@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	body {
+	    background-image: url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzF9Z0QbT3cOAZJ9s1Vv3URnnZ_CJwu0CT7TCZBQ7ncjRcFGIs");
+			background-size:100%;
+			background-repeat: no-repeat;
+	}
+</style>
+<script>
+	var message1 = "GBGGBBGGBBBGGBBBBGGBBBBBGGBBBBBBGGBHBBHBGGBBHBBBHBGGBHBBBHBBGGBHBHGGHBHBGGBBHBBBBHBBGGBBIBIBGGBIBIBBGGBBJKBKJBGGBJKBKJBBGGBBBBJKBBBKJBGGBBBBIBBBIBGGBLBLBGGBBLBBBBBBLBBBGGBLBBLBBGGBBBBBBMBBMBBBGGBBMBBBMBBBBBBGGBBBBMBBMBBGGBBMBBMBBBBGGBBBBBBNOBBONBBBGGOBBOLOBBBBOLOBBOGGBPBPBGGBBPBBPBBGGBBBPBBBPBBBGGPQAQPGGBPQBQPBGGBBPQCQPBBGGBBBPQDQPBBBGGBBBBPQEQPBBBBGGBBBBBPQFQPBBBBBGGBBBBBBPQBABQPBBBBBBGGBBBBBBBPQBBBQPBBBBBBBGGBBBBBBBBPQBCBQPBBBBBBBBGGBBBBBBBBBPQBDBQPBBBBBBBBBGGBBBBBBBBBBBBPQCACQPBBBBBBBBBBBBGGQBQHQDQHQCQGGRQBQHQCQHQBQRGGSQBQHQDQHQBQSGGRQCQIQBQIQBQRGGSQCQIQCQIQBQSG";
+
+	var message2 = "GQCQTQBQTQDQGGQDQTKQBQKTQCQGGQDQTQBQTQEQGGQEQTKQBQKTQDQGGQEQUQBQUQDQGGQDQUKQBQKUQEQGGQDQUQBQUQCQGGQCQUKQBQKUQDQGGVQBQHXHQBQVGGWXPQCQPXWGGVXHQDQHQBQVGGWXPQCQPXWGGVQBQHQBQHXVGGWXPQAQPXWGGXPYPZPaPbPcPbPaPZPYPXGGQBABQNOQBABQONQBQGGOQBABQOPdBdPOQBABQOGGQCQLdCdLOQBABQOGGOQDQOPdCdPOQDQOGGOQBAAABQOPdBABdPOQBAAABQOGGQBQHQBdBABdBQHOQBAAABQOGGOQBABQOHdBBBdHOQBAAABQOGGQCQeQCQeQBQGGQBQeOQCQOeQCQGGQBABQeQCQeQDQGGQDQeOQCQOeQBABQGGQCQfOQCQOfQBQGGQBQfQCQfQCQGGQBABQfOQCQOfQDQGGQDQfQCQfQBABQGGRiRiRGGRiSiSGGSiSiRGGSiSiSGGRjRjRGGRjRjSGGSjRjRGGSjSjSGGKRKPSPKRKGGKSKPRPKSKGGQAQhgBDADBgjgEDADEghQAQGGdDdhgBAAABgjgFAAAFghdDdGGdBCABBFBBACBdhgDADgjgFDADFghdBCABBFBBACBdGGQBQhgAgjgBAAAAABghQBQGGRgAgPgBAAAAABgPgAgRGGSgDADgPgFDADFgPgDADgSGGKQBQKhgDAAADghKQBQKGGKdBCABBFBBACBdKhgCDADCgjgDDADDghKdBCABBFBBACBdKGGKdDdKhgCAAACgjgEAAAEghKdDdKGGQBQkgBDADBgkQBQGGKQBQKkgEDADEgkKQBQKGGQAQkgAgjgDAAADgkQAQG";
+
+	var TONE_DURATION = .5;
+	var TONE_DURATION_VARIANCE_DISTANCE = .02;
+
+	var allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
+	var charToFreq = {};
+
+	let frequencyPlayer;
+
+	function loadMessage1() {
+		document.getElementById("alienMessageTextArea").value = message1;
+	}
+
+	function loadMessage2() {
+		document.getElementById("alienMessageTextArea").value = message2;
+	}
+
+	function init() {
+		loadMessage1();
+
+		for(var i = 0, len = allowedChars.length; i < len; i++) {
+			//TODO Every other is technically off by .0005
+			charToFreq[allowedChars[i]] = (73.179 + (12.1965*i));
+		}
+
+		var context = new (window.AudioContext || window.webkitAudioContext)();
+		frequencyPlayer = new FrequencyPlayer(context);
+	}
+
+	function whiteNoise(audioContext, duration) {
+		var bufferSize = duration * audioContext.sampleRate;
+	  var noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+	  var output = noiseBuffer.getChannelData(0);
+
+		for (var i = 0; i < bufferSize; i++) {
+		    output[i] = .1*(Math.random() * 2 - 1)
+		}
+
+		var whiteNoise = audioContext.createBufferSource();
+		whiteNoise.buffer = noiseBuffer;
+		whiteNoise.start(0);
+		whiteNoise.connect(audioContext.destination);
+	}
+
+	function playAlienMessage() {
+		var alienCode = document.getElementById("alienMessageTextArea").value;
+
+		var totalDuration = 0;
+		for (var i = 0, len = alienCode.length; i < len; i++) {
+			//create a random variance from .46-.5 seconds
+			var duration = getRandomVariance(TONE_DURATION, TONE_DURATION_VARIANCE_DISTANCE);
+			totalDuration += duration;
+			var freq = charToFreq[alienCode[i]];
+
+			frequencyPlayer.play(freq, duration);
+		}
+
+		if(!document.getElementById("whiteNoiseOff").checked) {
+			frequencyPlayer.addWhiteNoise(totalDuration);
+		}
+	}
+
+	// Returns a random number (number - varianceDistance) to (number + varianceDistance)
+	function getRandomVariance(number, varianceDistance) {
+		return number + (varianceDistance*2*(.5 - Math.random()));
+	}
+
+	class FrequencyPlayer {
+	  constructor(context) {
+	    this.context = context;
+			this.queuedTime = context.currentTime;
+	  }
+
+	  init() {
+	    this.oscillator = this.context.createOscillator();
+	    this.gainNode = this.context.createGain();
+
+	    this.oscillator.connect(this.context.destination);
+
+			var e = document.getElementById("oscillatorType");
+	    this.oscillator.type = e.options[e.selectedIndex].value;
+	  }
+
+
+	  //Switches to the given frequency at the given time
+	  play(frequency, duration) {
+	    this.init();
+
+	    this.oscillator.frequency.value = frequency;
+
+			this.queuedTime = Math.max(this.queuedTime, this.context.currentTime);
+	    this.oscillator.start(this.queuedTime);
+	    this.queuedTime += duration;
+	    this.oscillator.stop(this.queuedTime);
+			this.totalDuration += duration;
+	  }
+
+		addWhiteNoise(duration) {
+			whiteNoise(this.context, duration);
+		}
+	}
+
+	function onlyAlienLetters(valueToCheck) {
+		var invalidChars = /([^A-Za-v])+/g
+	  if(invalidChars.test(valueToCheck.value)) {
+	  	valueToCheck.value = valueToCheck.value.replace(invalidChars,"");
+	  }
+	}
+</script>
+</head>
+<body onload="init()">
+
+	Currently only supports A-Z and a-v </br></br>
+	<textarea rows="10" cols="100" id="alienMessageTextArea" onkeyup="onlyAlienLetters(this)">
+	</textarea></br>
+
+	<select id="oscillatorType">
+	  <option value="sine">sine</option>
+	  <option value="square">square</option>
+	  <option value="sawtooth">sawtooth</option>
+	  <option value="triangle">triangle</option>
+	</select>
+	<input type="checkbox" id="whiteNoiseOff" value="Clean"> Enhance by cleaning :) <br>
+	<button onclick="playAlienMessage()">Play</button>
+	<button onclick="loadMessage1()">Load message 1</button>
+	<button onclick="loadMessage2()">Load message 2</button>
+
+</body>
+</html>
